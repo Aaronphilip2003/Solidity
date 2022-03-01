@@ -23,4 +23,4 @@ contract StorageFactory{
     return simpleStorage.retrieve();
   }
 
-};
+}
