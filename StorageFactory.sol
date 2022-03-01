@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: UNLICENSED
 
 pragma solidity ^0.8.0;
-
 import "./SimpleStorage.sol";
 
 contract StorageFactory{
 
-  SimpleStorage[] public SimpleStorageArray;
+  SimpleStorage[] public storageArray;
 
-    function createSimpleStorageContract() public{
-         SimpleStorage simpleStorage = new SimpleStorage();
-        SimpleStorageArray.push(simpleStorage);
+  function createStorageContract() public{
+    SimpleStorage s=new SimpleStorage();
+    storageArray.push(s);
 
-    }
+  }
 
+  function sfStore(uint256 index,uint256 num)public{
+    SimpleStorage simpleStorage=SimpleStorage(address(storageArray[index]));
+    simpleStorage.store(num);
 
-
-
+  }
 
 }
