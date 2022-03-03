@@ -8,6 +8,7 @@ contract FundMe {
 
      mapping(address=>uint256)public AddressToNumber;
      address public owner;
+     address[] public funders;
 
      constructor(){
          owner=msg.sender;
@@ -25,6 +26,7 @@ contract FundMe {
         require(getConversionRate(msg.value)>=minValue,"You need to spend more ETH!");
 
         AddressToNumber[msg.sender]+=msg.value;
+        funders.push(msg.sender);   
     }
 
     function getVersion() public view returns(uint256){
@@ -49,7 +51,19 @@ contract FundMe {
 
     function withdraw() payable onlyOwner public{
         payable(msg.sender).transfer(address(this).balance);
+        
+        for(uint256 fundersIndex=0;fundersIndex<funders.length;fundersIndex++)
+        {
+            address funder = funders[fundersIndex]; // 0 funder --> 1st address 
+            AddressToNumber[funder]=0; // AddressToNumber[1st address] = value
+        }
+
+        funders=new address[](0);
     }
 
 
 }
+
+// funders = [0x1234, 0x5678]
+// funder= funder[0] // 0x1234
+// AddressToNumber[0x1234] = 0
