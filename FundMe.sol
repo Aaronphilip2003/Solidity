@@ -7,8 +7,22 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 contract FundMe {
 
      mapping(address=>uint256)public AddressToNumber;
+     address public owner;
+
+     constructor(){
+         owner=msg.sender;
+     }
+
+     modifier onlyOwner{
+         require(msg.sender==owner);
+         _;
+     }
 
     function fund() public payable{
+
+        uint256 minValue=50*10**18;
+
+        require(getConversionRate(msg.value)>=minValue,"You need to spend more ETH!");
 
         AddressToNumber[msg.sender]+=msg.value;
     }
@@ -25,6 +39,16 @@ contract FundMe {
 
         return uint256(price);       
 
+    }
+
+    function getConversionRate(uint256 ethAmount) public view returns(uint256) {
+        uint256 ethPrice = getPrice();
+        uint256 EthAmtinUSD = (ethPrice * ethAmount)/ 100000000;
+        return EthAmtinUSD;
+    }
+
+    function withdraw() payable onlyOwner public{
+        payable(msg.sender).transfer(address(this).balance);
     }
 
 
