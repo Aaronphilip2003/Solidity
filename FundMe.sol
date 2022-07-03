@@ -1,69 +1,58 @@
-// SPDX-License-Identifier: UNLICENSED
+pragma solidity ^0.6.0;
 
-pragma solidity ^0.8.0;
+import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
+import "@chainlink/contracts/src/v0.6/vendor/SafeMathChainlink.sol";
 
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+contract fundMe{
+    using SafeMathChainlink for uint256;
 
-contract FundMe {
+    // mapping address to the amount deposited
+    mapping(address=>uint256) public addressToAmountFeed;
+    address[] public funders; //address of the people who deposited ETH
+    address public owner;// address of the owner ie the person who deployed the contract
 
-     mapping(address=>uint256)public AddressToNumber;
-     address public owner;
-     address[] public funders;
-
-     constructor(){
-         owner=msg.sender;
-     }
-
-     modifier onlyOwner{
-         require(msg.sender==owner);
-         _;
-     }
+    constructor() public{
+        owner=msg.sender;
+    }
 
     function fund() public payable{
-
-        uint256 minValue=50*10**18;
-
-        require(getConversionRate(msg.value)>=minValue,"You need to spend more ETH!");
-
-        AddressToNumber[msg.sender]+=msg.value;
-        funders.push(msg.sender);   
+        uint256 minimumUSD=50*10**18;
+        require(getConversionRate(msg.value)>=minimumUSD,"You need to spend more ETH!");
+        addressToAmountFeed[msg.sender]+=msg.value;
+        funders.push(msg.sender);
     }
 
-    function getVersion() public view returns(uint256){
-        AggregatorV3Interface priceFeed=AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
-        return priceFeed.version();      
-
+    function getVersion() public view returns (uint256){
+    AggregatorV3Interface priceFeed = AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
+    return priceFeed.version();
     }
 
-    function getPrice() public view returns(uint256){
-        AggregatorV3Interface priceFeed=AggregatorV3Interface(0x9326BFA02ADD2366b30bacB125260Af641031331);
-        (,int price,,,) = priceFeed.latestRoundData();
-
-        return uint256(price);       
-
+    function getPrice()public view returns(uint256){
+        AggregatorV3Interface priceFeed=AggregatorV3Interface(0x8A753747A1Fa494EC906cE90E9f37563A8AF630e);
+        (,int256 answer,,,)=priceFeed.latestRoundData();
+        return uint256(answer*10000000000);
     }
 
-    function getConversionRate(uint256 ethAmount) public view returns(uint256) {
-        uint256 ethPrice = getPrice();
-        uint256 EthAmtinUSD = (ethPrice * ethAmount)/ 100000000;
-        return EthAmtinUSD;
+    function getConversionRate(uint256 ethAmount)public view returns(uint256){
+        uint256 ethPrice=getPrice();
+        uint256 ethAmountInUSD=(ethPrice*ethAmount)/1000000000000000000;
+        return ethAmountInUSD;
+    }
+
+    modifier onlyOwner{
+        require(msg.sender==owner);
+        _;
     }
 
     function withdraw() payable onlyOwner public{
         payable(msg.sender).transfer(address(this).balance);
-        
-        for(uint256 fundersIndex=0;fundersIndex<funders.length;fundersIndex++)
+        for(uint256 funderIndex=0;funderIndex<funders.length;funderIndex++)
         {
-            address funder = funders[fundersIndex]; // 0 funder --> 1st address 
-            AddressToNumber[funder]=0; // AddressToNumber[1st address] = value
+            address funder=funders[funderIndex];
+            addressToAmountFeed[funder]=0;
         }
-
         funders=new address[](0);
     }
 
 
 }
-
-// funders = [0x1234, 0x5678]
-// funder= funder[0] // 0x1234
-// AddressToNumber[0x1234] = 0
